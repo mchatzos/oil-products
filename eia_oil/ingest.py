@@ -1,9 +1,10 @@
 from datetime import date
+from typing import Optional
 from .client import EIAClient
 from .db import Database
 
 
-def _parse_date(val: str) -> date | None:
+def _parse_date(val: str) -> Optional[date]:
     for fmt in ("%Y-%m-%d", "%Y-%m", "%Y"):
         try:
             from datetime import datetime
@@ -18,7 +19,7 @@ class Ingestor:
         self.client = client
         self.db = db
 
-    def ingest_crude_prices(self, start: str = "2000-01-01", end: str | None = None):
+    def ingest_crude_prices(self, start: str = "2000-01-01", end: Optional[str] = None):
         """WTI and Brent spot prices (weekly)."""
         params = {
             "data[]": "value",
@@ -44,7 +45,7 @@ class Ingestor:
         self.db.upsert("crude_prices", records, ["period", "series_id"])
         print(f"crude_prices: {len(records)} rows upserted")
 
-    def ingest_crude_production(self, start: str = "2000-01-01", end: str | None = None):
+    def ingest_crude_production(self, start: str = "2000-01-01", end: Optional[str] = None):
         """U.S. monthly crude oil production by state/area."""
         params = {
             "data[]": "value",
@@ -69,7 +70,7 @@ class Ingestor:
         self.db.upsert("crude_production", records, ["period", "area_id"])
         print(f"crude_production: {len(records)} rows upserted")
 
-    def ingest_crude_inventories(self, start: str = "2000-01-01", end: str | None = None):
+    def ingest_crude_inventories(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Weekly U.S. crude oil inventories."""
         params = {
             "data[]": "value",
@@ -95,7 +96,7 @@ class Ingestor:
         self.db.upsert("crude_inventories", records, ["period", "series_id"])
         print(f"crude_inventories: {len(records)} rows upserted")
 
-    def ingest_all(self, start: str = "2000-01-01", end: str | None = None):
+    def ingest_all(self, start: str = "2000-01-01", end: Optional[str] = None):
         self.ingest_crude_prices(start, end)
         self.ingest_crude_production(start, end)
         self.ingest_crude_inventories(start, end)

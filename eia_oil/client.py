@@ -1,5 +1,5 @@
 import httpx
-from typing import Any
+from typing import Any, Optional
 
 BASE_URL = "https://api.eia.gov/v2"
 
@@ -9,7 +9,7 @@ class EIAClient:
         self.api_key = api_key
         self._client = httpx.Client(timeout=30)
 
-    def fetch(self, route: str, params: dict[str, Any] | None = None) -> list[dict]:
+    def fetch(self, route: str, params: Optional[dict] = None) -> list:
         """Fetch all pages for a given EIA v2 route and return the merged data list."""
         params = dict(params or {})
         params["api_key"] = self.api_key
