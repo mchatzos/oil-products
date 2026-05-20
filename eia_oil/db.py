@@ -39,6 +39,53 @@ class Database:
                 PRIMARY KEY (period, series_id)
             )
         """)
+        for table in (
+            "product_stocks",
+            "stocks_by_type",
+            "stocks_by_state",
+            "cushing_stocks",
+            "refinery_utilization",
+            "refinery_inputs",
+            "refinery_production",
+            "unit_throughput",
+        ):
+            self._create_facet_table(table)
+        self.con.execute("""
+            CREATE TABLE IF NOT EXISTS futures_curves (
+                trade_date      DATE        NOT NULL,
+                root_symbol     VARCHAR     NOT NULL,
+                exchange        VARCHAR     NOT NULL,
+                contract_month  VARCHAR     NOT NULL,
+                expiry_date     DATE,
+                open            DOUBLE,
+                high            DOUBLE,
+                low             DOUBLE,
+                close           DOUBLE,
+                volume          BIGINT,
+                wap             DOUBLE,
+                bar_count       INTEGER,
+                currency        VARCHAR,
+                PRIMARY KEY (trade_date, root_symbol, contract_month)
+            )
+        """)
+
+    def _create_facet_table(self, table: str):
+        self.con.execute(f"""
+            CREATE TABLE IF NOT EXISTS {table} (
+                period       DATE     NOT NULL,
+                duoarea      VARCHAR  NOT NULL,
+                area_name    VARCHAR,
+                product      VARCHAR  NOT NULL,
+                product_name VARCHAR,
+                process      VARCHAR  NOT NULL,
+                process_name VARCHAR,
+                series       VARCHAR  NOT NULL,
+                series_desc  VARCHAR,
+                value        DOUBLE,
+                units        VARCHAR,
+                PRIMARY KEY (period, series)
+            )
+        """)
 
     def upsert(self, table: str, rows: list[dict], key_cols: list[str]):
         if not rows:

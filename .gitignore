@@ -9,3 +9,6 @@ venv/
 *.duckdb
 *.duckdb.wal
 .DS_Store
+*.png
+*.ipynb
+.ipynb_checkpoints/

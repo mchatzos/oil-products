@@ -96,7 +96,79 @@ class Ingestor:
         self.db.upsert("crude_inventories", records, ["period", "series_id"])
         print(f"crude_inventories: {len(records)} rows upserted")
 
+    def _fetch_facet_series(self, route: str, table: str, start: str, end: Optional[str]):
+        """Generic fetch for routes that share the duoarea/product/process/series schema."""
+        params = {
+            "data[]": "value",
+            "sort[0][column]": "period",
+            "sort[0][direction]": "asc",
+            "start": start,
+        }
+        if end:
+            params["end"] = end
+
+        rows = self.client.fetch(route, params)
+        records = [
+            {
+                "period": _parse_date(r["period"]),
+                "duoarea": r.get("duoarea", ""),
+                "area_name": r.get("area-name", ""),
+                "product": r.get("product", ""),
+                "product_name": r.get("product-name", ""),
+                "process": r.get("process", ""),
+                "process_name": r.get("process-name", ""),
+                "series": r.get("series", ""),
+                "series_desc": r.get("series-description", ""),
+                "value": r.get("value"),
+                "units": r.get("units", ""),
+            }
+            for r in rows
+        ]
+        self.db.upsert(table, records, ["period", "series"])
+        print(f"{table}: {len(records)} rows upserted")
+
+    def ingest_product_stocks(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Motor gasoline, distillate, propane ending stocks (monthly)."""
+        self._fetch_facet_series("petroleum/stoc/ts/data/", "product_stocks", start, end)
+
+    def ingest_stocks_by_type(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Petroleum stocks by type at bulk terminals, refineries, etc. (monthly)."""
+        self._fetch_facet_series("petroleum/stoc/typ/data/", "stocks_by_type", start, end)
+
+    def ingest_stocks_by_state(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Refinery, bulk terminal, and natural gas plant stocks by state (monthly)."""
+        self._fetch_facet_series("petroleum/stoc/st/data/", "stocks_by_state", start, end)
+
+    def ingest_cushing_stocks(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Crude oil stocks at Cushing and other tank farms & pipelines (monthly)."""
+        self._fetch_facet_series("petroleum/stoc/cu/data/", "cushing_stocks", start, end)
+
+    def ingest_refinery_utilization(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Refinery utilization and capacity (monthly + annual)."""
+        self._fetch_facet_series("petroleum/pnp/unc/data/", "refinery_utilization", start, end)
+        self._fetch_facet_series("petroleum/pnp/cap1/data/", "refinery_utilization", start, end)
+
+    def ingest_refinery_inputs(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Weekly refinery and blender net inputs and utilization."""
+        self._fetch_facet_series("petroleum/pnp/wiup/data/", "refinery_inputs", start, end)
+
+    def ingest_refinery_production(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Weekly refinery and blender net production by product."""
+        self._fetch_facet_series("petroleum/pnp/wprodrb/data/", "refinery_production", start, end)
+
+    def ingest_unit_throughput(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Monthly downstream unit throughput: FCC, HDC, coker, reformer by PADD."""
+        self._fetch_facet_series("petroleum/pnp/dwns/data/", "unit_throughput", start, end)
+
     def ingest_all(self, start: str = "2000-01-01", end: Optional[str] = None):
         self.ingest_crude_prices(start, end)
         self.ingest_crude_production(start, end)
         self.ingest_crude_inventories(start, end)
+        self.ingest_product_stocks(start, end)
+        self.ingest_stocks_by_type(start, end)
+        self.ingest_stocks_by_state(start, end)
+        self.ingest_cushing_stocks(start, end)
+        self.ingest_refinery_utilization(start, end)
+        self.ingest_refinery_inputs(start, end)
+        self.ingest_refinery_production(start, end)
+        self.ingest_unit_throughput(start, end)

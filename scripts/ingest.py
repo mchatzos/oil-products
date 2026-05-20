@@ -25,7 +25,13 @@ def main():
     parser.add_argument("--end", default=None, help="End date YYYY-MM-DD")
     parser.add_argument(
         "--dataset",
-        choices=["prices", "production", "inventories", "all"],
+        choices=[
+            "prices", "production", "inventories",
+            "product_stocks", "stocks_by_type", "stocks_by_state", "cushing_stocks",
+            "refinery_utilization", "refinery_inputs", "refinery_production",
+            "unit_throughput",
+            "all",
+        ],
         default="all",
     )
     parser.add_argument("--db", default="eia_oil.duckdb", help="DuckDB file path")
@@ -46,6 +52,14 @@ def main():
             "prices": ingestor.ingest_crude_prices,
             "production": ingestor.ingest_crude_production,
             "inventories": ingestor.ingest_crude_inventories,
+            "product_stocks": ingestor.ingest_product_stocks,
+            "stocks_by_type": ingestor.ingest_stocks_by_type,
+            "stocks_by_state": ingestor.ingest_stocks_by_state,
+            "cushing_stocks": ingestor.ingest_cushing_stocks,
+            "refinery_utilization": ingestor.ingest_refinery_utilization,
+            "refinery_inputs": ingestor.ingest_refinery_inputs,
+            "refinery_production": ingestor.ingest_refinery_production,
+            "unit_throughput": ingestor.ingest_unit_throughput,
             "all": lambda s, e: ingestor.ingest_all(s, e),
         }
         dispatch[args.dataset](args.start, args.end)
