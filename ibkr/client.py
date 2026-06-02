@@ -14,18 +14,27 @@ class IBKRClient:
     def disconnect(self):
         self.ib.disconnect()
 
-    def get_contract_details(self, symbol: str, exchange: str, currency: str = "USD"):
+    def get_contracts(self, symbol: str, exchange: str, currency: str) -> list:
         contract = Future(symbol=symbol, exchange=exchange, currency=currency)
+        contract.includeExpired = True
         return self.ib.reqContractDetails(contract)
 
-    def get_historical_bars(self, contract, duration: str = "2 Y", bar_size: str = "1 day"):
+    def get_historical_bars(
+        self,
+        contract,
+        end_datetime: str = "",
+        duration: str = "2 Y",
+        bar_size: str = "1 day",
+    ):
         return self.ib.reqHistoricalData(
             contract,
-            endDateTime="",
+            endDateTime=end_datetime,
             durationStr=duration,
             barSizeSetting=bar_size,
             whatToShow="TRADES",
             useRTH=True,
+            keepUpToDate=False,
+            formatDate=1,
         )
 
     def __enter__(self):

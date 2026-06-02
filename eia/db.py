@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class Database:
-    def __init__(self, path: str = "eia_oil.duckdb"):
+    def __init__(self, path: str = "oil_products.duckdb"):
         self.path = Path(path)
         self.con = duckdb.connect(str(self.path))
         self._init_schema()
@@ -48,6 +48,7 @@ class Database:
             "refinery_inputs",
             "refinery_production",
             "unit_throughput",
+            "refinery_production_monthly",
         ):
             self._create_facet_table(table)
         self.con.execute("""

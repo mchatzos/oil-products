@@ -127,48 +127,62 @@ class Ingestor:
         self.db.upsert(table, records, ["period", "series"])
         print(f"{table}: {len(records)} rows upserted")
 
+    # Registry: table → list of API routes. Multiple routes merge into one table (e.g. utilization).
+    FACET_ROUTES = {
+        "product_stocks":             ["petroleum/stoc/ts/data/"],
+        "stocks_by_type":             ["petroleum/stoc/typ/data/"],
+        "stocks_by_state":            ["petroleum/stoc/st/data/"],
+        "cushing_stocks":             ["petroleum/stoc/cu/data/"],
+        "refinery_utilization":       ["petroleum/pnp/unc/data/", "petroleum/pnp/cap1/data/"],
+        "refinery_inputs":            ["petroleum/pnp/wiup/data/"],
+        "refinery_production":        ["petroleum/pnp/wprodrb/data/"],
+        "unit_throughput":            ["petroleum/pnp/dwns/data/"],
+        "refinery_production_monthly":["petroleum/pnp/refp/data/"],
+    }
+
+    def _ingest_facet_table(self, table: str, start: str, end: Optional[str]):
+        for route in self.FACET_ROUTES[table]:
+            self._fetch_facet_series(route, table, start, end)
+
     def ingest_product_stocks(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Motor gasoline, distillate, propane ending stocks (monthly)."""
-        self._fetch_facet_series("petroleum/stoc/ts/data/", "product_stocks", start, end)
+        self._ingest_facet_table("product_stocks", start, end)
 
     def ingest_stocks_by_type(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Petroleum stocks by type at bulk terminals, refineries, etc. (monthly)."""
-        self._fetch_facet_series("petroleum/stoc/typ/data/", "stocks_by_type", start, end)
+        self._ingest_facet_table("stocks_by_type", start, end)
 
     def ingest_stocks_by_state(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Refinery, bulk terminal, and natural gas plant stocks by state (monthly)."""
-        self._fetch_facet_series("petroleum/stoc/st/data/", "stocks_by_state", start, end)
+        self._ingest_facet_table("stocks_by_state", start, end)
 
     def ingest_cushing_stocks(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Crude oil stocks at Cushing and other tank farms & pipelines (monthly)."""
-        self._fetch_facet_series("petroleum/stoc/cu/data/", "cushing_stocks", start, end)
+        self._ingest_facet_table("cushing_stocks", start, end)
 
     def ingest_refinery_utilization(self, start: str = "2000-01-01", end: Optional[str] = None):
-        """Refinery utilization and capacity (monthly + annual)."""
-        self._fetch_facet_series("petroleum/pnp/unc/data/", "refinery_utilization", start, end)
-        self._fetch_facet_series("petroleum/pnp/cap1/data/", "refinery_utilization", start, end)
+        """Refinery utilization and capacity (monthly pnp/unc + annual pnp/cap1)."""
+        self._ingest_facet_table("refinery_utilization", start, end)
 
     def ingest_refinery_inputs(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Weekly refinery and blender net inputs and utilization."""
-        self._fetch_facet_series("petroleum/pnp/wiup/data/", "refinery_inputs", start, end)
+        self._ingest_facet_table("refinery_inputs", start, end)
 
     def ingest_refinery_production(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Weekly refinery and blender net production by product."""
-        self._fetch_facet_series("petroleum/pnp/wprodrb/data/", "refinery_production", start, end)
+        self._ingest_facet_table("refinery_production", start, end)
 
     def ingest_unit_throughput(self, start: str = "2000-01-01", end: Optional[str] = None):
         """Monthly downstream unit throughput: FCC, HDC, coker, reformer by PADD."""
-        self._fetch_facet_series("petroleum/pnp/dwns/data/", "unit_throughput", start, end)
+        self._ingest_facet_table("unit_throughput", start, end)
+
+    def ingest_refinery_production_monthly(self, start: str = "2000-01-01", end: Optional[str] = None):
+        """Monthly refinery and blender net production by product and PADD."""
+        self._ingest_facet_table("refinery_production_monthly", start, end)
 
     def ingest_all(self, start: str = "2000-01-01", end: Optional[str] = None):
         self.ingest_crude_prices(start, end)
         self.ingest_crude_production(start, end)
         self.ingest_crude_inventories(start, end)
-        self.ingest_product_stocks(start, end)
-        self.ingest_stocks_by_type(start, end)
-        self.ingest_stocks_by_state(start, end)
-        self.ingest_cushing_stocks(start, end)
-        self.ingest_refinery_utilization(start, end)
-        self.ingest_refinery_inputs(start, end)
-        self.ingest_refinery_production(start, end)
-        self.ingest_unit_throughput(start, end)
+        for table in self.FACET_ROUTES:
+            self._ingest_facet_table(table, start, end)

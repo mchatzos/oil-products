@@ -14,7 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from eia_oil import EIAClient, Database, Ingestor
+from eia import EIAClient, Database, Ingestor
 
 load_dotenv()
 
@@ -30,11 +30,12 @@ def main():
             "product_stocks", "stocks_by_type", "stocks_by_state", "cushing_stocks",
             "refinery_utilization", "refinery_inputs", "refinery_production",
             "unit_throughput",
+            "refinery_production_monthly",
             "all",
         ],
         default="all",
     )
-    parser.add_argument("--db", default="eia_oil.duckdb", help="DuckDB file path")
+    parser.add_argument("--db", default="oil_products.duckdb", help="DuckDB file path")
     parser.add_argument("--query", default=None, help="Run a SQL query and print results")
     args = parser.parse_args()
 
@@ -60,6 +61,7 @@ def main():
             "refinery_inputs": ingestor.ingest_refinery_inputs,
             "refinery_production": ingestor.ingest_refinery_production,
             "unit_throughput": ingestor.ingest_unit_throughput,
+            "refinery_production_monthly": ingestor.ingest_refinery_production_monthly,
             "all": lambda s, e: ingestor.ingest_all(s, e),
         }
         dispatch[args.dataset](args.start, args.end)
